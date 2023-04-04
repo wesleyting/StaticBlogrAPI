@@ -1,6 +1,3 @@
-using Microsoft.Extensions.FileProviders;
-using Microsoft.AspNetCore.Http;
-using System.IO;
 using Microsoft.EntityFrameworkCore;
 using StaticBlogr;
 
@@ -21,7 +18,7 @@ var app = builder.Build();
 
 RouteGroupBuilder blogPosts = app.MapGroup("/blogposts");
 
-blogPosts.MapGet("/", GetAllBlogPosts);
+blogPosts.MapGet("/", (Func<BlogPostDb, bool?, Task<IResult>>)GetAllBlogPosts);
 blogPosts.MapGet("/{id}", GetBlogPost);
 blogPosts.MapPost("/", CreateBlogPost);
 blogPosts.MapPut("/{id}", UpdateBlogPost);
@@ -32,10 +29,18 @@ app.UseCors("MyPolicy");
 app.Run();
 
 
-static async Task<IResult> GetAllBlogPosts(BlogPostDb db)
+static async Task<IResult> GetAllBlogPosts(BlogPostDb db, bool? featured = null)
 {
-    return TypedResults.Ok(await db.BlogPosts.Select(x => new BlogPostDTO(x)).ToArrayAsync());
+    IQueryable<BlogPost> query = db.BlogPosts;
+
+    if (featured.HasValue)
+    {
+        query = query.Where(x => x.IsFeatured == featured.Value);
+    }
+
+    return TypedResults.Ok(await query.Select(x => new BlogPostDTO(x)).ToArrayAsync());
 }
+
 
 static async Task<IResult> GetBlogPost(int id, BlogPostDb db)
 {
@@ -70,11 +75,13 @@ static async Task<IResult> UpdateBlogPost(int id, BlogPostDTO blogPostDTO, BlogP
 
     blogPost.Title = blogPostDTO.Title;
     blogPost.Content = blogPostDTO.Content;
+    blogPost.IsFeatured = blogPostDTO.IsFeatured; // Add this line to update the IsFeatured property
 
     await db.SaveChangesAsync();
 
     return TypedResults.NoContent();
 }
+
 
 static async Task<IResult> DeleteBlogPost(int id, BlogPostDb db)
 {

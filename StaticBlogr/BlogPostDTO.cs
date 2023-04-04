@@ -8,7 +8,7 @@ namespace StaticBlogr
         public string? Title { get; set; }
         public string? Content { get; set; }
         public DateTime CreatedAt { get; set; }
-        public string? ImageUrl { get; set; }
+        public Boolean IsFeatured { get; set; }
 
         public BlogPostDTO() { }
 
@@ -18,7 +18,7 @@ namespace StaticBlogr
             Title = blogPost.Title;
             Content = blogPost.Content;
             CreatedAt = blogPost.CreatedAt;
-            ImageUrl = blogPost.ImageUrl;
+            IsFeatured = blogPost.IsFeatured;
         }
     }
 }
